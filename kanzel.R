@@ -10,14 +10,17 @@ rm(list=ls())
 #
 kanzel <- fread("../db/kanzel.html")
 kanzel$Ymd <- as.Date(kanzel$Ymd)
-kanzel<-kanzel[,.(Ymd,g_n,s_n,g_s,s_s,R_n,R_s,Rr,R)]
+kanzel$Year <- year(kanzel$Ymd)
+kanzel$Month <- month(kanzel$Ymd)
+kanzel<-kanzel[,.(Ymd,Year,Month,g_n,s_n,g_s,s_s,R_n,R_s,Rr,R)]
+
 kanzel$Short <- ma(kanzel$R,order=27)
 kanzel$Medium <- ma(kanzel$R,order=180)
 kanzel$Long <- ma(kanzel$R, order=390)
 kanzel_test <- kanzel[Ymd >=2014,]
 kanzel_train <- kanzel[Ymd <2014,]
 
-ggplot(data=kanzel_test,aes(x=Ymd,y=Medium)) + geom_line()
+ggplot(data=kanzel,aes(x=Ymd,y=Medium)) + geom_line()
 a <- ggplot(data=bremen,aes(x=Ymd,y=mgii)) + geom_line()
 ggplotly(a)
 #
