@@ -1,0 +1,59 @@
+---
+title: "Sunspot Decade Summary"
+author: "David J Jackson"
+date: "12/31/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(tidyverse)
+kanzel <- fread("../db/kh_spots.csv")
+kanzel$Ymd <- as.Date(kanzel$Ymd)
+kanzel$Year <- year(kanzel$Ymd)
+kanzel$Month <- month(kanzel$Ymd)
+kanzel$Spots <- kanzel$s_n + kanzel$s_s
+kanzel$Groups <- kanzel$g_n + kanzel$g_s
+kanzel<-kanzel[,.(Ymd,Year,Month,g_n,s_n,g_s,s_s,R,R_n,R_s,Spots,Groups)]
+df <- kanzel %>% filter(Ymd >="2009-01-01" & Ymd <="2019-12-31")
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+head(df)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+ggplot(data=df,aes(x=Ymd,y=R)) +geom_line() +geom_smooth() + 
+ggtitle("Total Wolf(Rn) Value: 2009 - 2019")
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r summaries}
+df.group <- df %>% select(Year,Groups) %>% group_by(Year) %>% summarize(Group = sum(Groups))
+df.spots <- df %>% select(Year,Spots) %>% group_by(Year) %>% summarize(Spots = sum(Spots))
+
+```
+```{r plot1}
+ggplot(data=df.spots,aes(x=Year,y=Spots)) + geom_col() + ggtitle("Kanzel Total Sunspots by Year")
+```
+``
+
+```{r group_summary}
+ggplot(data=df.group,aes(x=Year,y=Group)) + geom_col() + ggtitle("Kanzel Total Sunspot Groups by Year")
+```
+```{r}
+ggplot(data=df,aes(Groups)) +geom_histogram(binwidth=2) + facet_wrap(~Year,nrow =4,ncol=4) + 
+ggtitle("Histogram of Sunspot Groups by Year: 2009 - 2019") +xlab("Year by Year") + ylab("Total Groups")
+```
+
