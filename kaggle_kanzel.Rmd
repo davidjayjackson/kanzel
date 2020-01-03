@@ -1,15 +1,15 @@
 ---
-title: "Sunspot Decade Summary"
+title: "A Decade of Sunspots: 2009 -2019"
 author: "David J Jackson"
-date: "12/31/2019"
-output: html_document
+date: "1/2/2020"
+output: pdf_document
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(data.table)
 library(tidyverse)
-kanzel <- fread("../db/kh_spots.csv")
+library(prophet)
+kanzel <- fread("./kh_spots.csv")
 kanzel$Ymd <- as.Date(kanzel$Ymd)
 kanzel$Year <- year(kanzel$Ymd)
 kanzel$Month <- month(kanzel$Ymd)
@@ -18,42 +18,47 @@ kanzel$Groups <- kanzel$g_n + kanzel$g_s
 kanzel<-kanzel[,.(Ymd,Year,Month,g_n,s_n,g_s,s_s,R,R_n,R_s,Spots,Groups)]
 df <- kanzel %>% filter(Ymd >="2009-01-01" & Ymd <="2019-12-31")
 ```
+### Introduction to International Suspot Number(ISN/R)
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
+The first thing we need to understand is that the (raw) data used to predict (in the plot below) the values of "y" are  sunspots or even mean sunspots but are daily mean Wolf(Rn) value. The Wolf(mean daily) values are calculate using the formula, Wolf = Groups *10 +Spots. Two examples:
+1G 10 + 20S = 30 Wolf 2G 10 + 10S = 30 Wolf
+```{r cars, echo=FALSE}
 head(df)
 ```
-
-## Including Plots
-
-You can also embed plots, for example:
-
+## Total International Sunspot Number(ISN/Rn) by Year: 2009 - 2019
 ```{r pressure, echo=FALSE}
 ggplot(data=df,aes(x=Ymd,y=R)) +geom_line() +geom_smooth() + 
 ggtitle("Total Wolf(Rn) Value: 2009 - 2019")
 ```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-```{r summaries}
+```{r summaries, echo=FALSE}
 df.group <- df %>% select(Year,Groups) %>% group_by(Year) %>% summarize(Group = sum(Groups))
 df.spots <- df %>% select(Year,Spots) %>% group_by(Year) %>% summarize(Spots = sum(Spots))
-
 ```
-```{r plot1}
+```{r plot1,echo=FALSE}
 ggplot(data=df.spots,aes(x=Year,y=Spots)) + geom_col() + ggtitle("Kanzel Total Sunspots by Year")
-```
-``
-
-```{r group_summary}
 ggplot(data=df.group,aes(x=Year,y=Group)) + geom_col() + ggtitle("Kanzel Total Sunspot Groups by Year")
 ```
-```{r}
+```{r echo=FALSE}
 ggplot(data=df,aes(Groups)) +geom_histogram(binwidth=2) + facet_wrap(~Year,nrow =4,ncol=4) + 
 ggtitle("Histogram of Sunspot Groups by Year: 2009 - 2019") +xlab("Year by Year") + ylab("Total Groups")
 ```
-
+```{r echo=FALSE}
+ggplot(data=df,aes(Spots)) +geom_histogram(binwidth=20) + facet_wrap(~Year,nrow =4,ncol=4) + 
+ggtitle("Histogram of Total Sunspots by Year: 2009 - 2019") +xlab("Year by Year") + ylab("Total Spots")
+```
+```{r predict1, echo=FALSE}
+df.pred <- kanzel %>% select(Ymd,Spots)
+colnames(df.pred) <- c("ds","y")
+m <- prophet(seasonality.mode="multiplicative")
+m <- add_seasonality(m, name="cycle_11year", period=365.25 * 11,fourier.order=5)
+m <- fit.prophet(m, df.pred)
+future <- make_future_dataframe(m,periods=8000,freq="day")
+forecast <- predict(m, future)
+plot(m,forecast) +xlab("Year of Prediction") + ylab("Total Sunspots")
+```
+```{r cycle25, echo=FALSE}
+fcast <- forecast %>% select(ds,yhat,yhat_lower,yhat_upper) %>% filter(ds>="2019-01-01")
+ggplot(data=fcast,aes(x=ds,y=yhat,col="Predicted")) +geom_line() +xlab("Year of Prediction") + ylab("Total Sunspots") +
+ geom_smooth(aes(x=ds,y=yhat_lower,col="yhat_lower")) + geom_smooth(aes(x=ds,y=yhat_upper,col="yhat_upper")) +
+  ggtitle("Solar Cycle 25 and Beyond")
+```
