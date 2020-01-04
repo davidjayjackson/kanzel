@@ -1,0 +1,73 @@
+---
+title: "Predicting Sunspots withy GARCH"
+author: "David J Jackson"
+date: "1/3/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# library(data.table)
+library(tidyverse)
+# library(prophet)
+library(quantmod)
+library(rugarch)
+kanzel <- data.table::fread("./kh_spots.csv")
+kanzel$Ymd <- as.Date(kanzel$Ymd)
+kanzel$Year <- lubridate::year(kanzel$Ymd)
+kanzel$Month <- lubridate::month(kanzel$Ymd)
+kanzel$Spots <- kanzel$s_n + kanzel$s_s
+kanzel$Groups <- kanzel$g_n + kanzel$g_s
+kanzel<-kanzel[,.(Ymd,Year,Month,g_n,s_n,g_s,s_s,R,R_n,R_s,Spots,Groups)]
+df <- kanzel %>% filter(Ymd <="2019-12-31")
+
+```
+
+## Predicting Sunspot with GARCH
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+### IBM as Control for Predictng Time Series (GARCH)
+```{r ibm,echo=FALSE}
+ibm <- getSymbols("IBM",auto.assign = FALSE,src="yahoo")
+ibmClose <- ibm$IBM.Close
+tbl_df(ibm)
+chartSeries(ibm)
+```
+
+### GARCH Model 1 garchOrder=c(0,1) (Akaike  4.0036)
+ 
+You can also embed plots, for example:
+
+```{r pressure,model1, echo=FALSE}
+ibm11 <- ugarchspec(variance.model = list(model="sGARCH",garchOrder=c(0,1)),
+                   mean.model=list(armaOrder=c(1,1)),
+                   distribution.model = "std")
+ibmGarch1 <-ugarchfit(spec=ibm11,data=ibmClose)
+ibmPredict1 <- ugarchboot(ibmGarch1,n.ahead = 30,method=c("Partial","Full")[1])
+plot(ibmPredict1)
+```
+
+### GARCH Model 2 garchOrder=c(1,1) (Akaike 3.9422)
+
+```{r pressure,model2, echo=FALSE}
+ibm2 <- ugarchspec(variance.model = list(model="sGARCH",garchOrder=c(1,1)),
+                   mean.model=list(armaOrder=c(1,1)),
+                   distribution.model = "std")
+ibmGarch2 <-ugarchfit(spec=ibm2,data=ibmClose)
+ibmPredict2 <- ugarchboot(ibmGarch1,n.ahead = 30,method=c("Partial","Full")[1])
+plot(ibmPredict2)
+```
+
+### GARCH Model 3 garchOrder=c(2,2) (Akaike 3.9414)
+
+```{r pressure,model3, echo=FALSE}
+ibm3 <- ugarchspec(variance.model = list(model="sGARCH",garchOrder=c(2,2)),
+                   mean.model=list(armaOrder=c(1,1)),
+                   distribution.model = "std")
+ibmGarch3 <-ugarchfit(spec=ibm3,data=ibmClose)
+ibmPredict3 <- ugarchboot(ibmGarch1,n.ahead = 30,method=c("Partial","Full")[1])
+plot(ibmPredict3)
+```
