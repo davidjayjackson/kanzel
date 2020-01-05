@@ -1,6 +1,4 @@
-# library(data.table)
 library(tidyverse)
-# library(prophet)
 library(quantmod)
 library(rugarch)
 kanzel <- data.table::fread("./kh_spots.csv")
@@ -26,8 +24,8 @@ ibm11 <- ugarchspec(variance.model = list(model="sGARCH",garchOrder=c(0,1)),
                    mean.model=list(armaOrder=c(1,1)),
                    distribution.model = "std")
 ibmGarch1 <-ugarchfit(spec=ibm11,data=ibmClose)
-ibmPredict1 <- ugarchboot(ibmGarch1,n.ahead = 30,method=c("Partial","Full")[1])
-plot(ibmPredict1)
+ibmPredict1 <- ugarchboot(ibmGarch1,n.ahead = 14,method=c("Partial","Full")[1])
+plot(ibmPredict1,which=2)
 
 ### GARCH Model 2 garchOrder=c(1,1) (Akaike 3.9422)
 
@@ -35,8 +33,8 @@ ibm2 <- ugarchspec(variance.model = list(model="sGARCH",garchOrder=c(1,1)),
                    mean.model=list(armaOrder=c(1,1)),
                    distribution.model = "std")
 ibmGarch2 <-ugarchfit(spec=ibm2,data=ibmClose)
-ibmPredict2 <- ugarchboot(ibmGarch1,n.ahead = 30,method=c("Partial","Full")[1])
-plot(ibmPredict2)
+ibmPredict2 <- ugarchboot(ibmGarch1,n.ahead = 14,method=c("Partial","Full")[1])
+plot(ibmPredict2,which=2)
 
 ### GARCH Model 3 garchOrder=c(2,2) (Akaike 3.9414)
 
@@ -44,5 +42,5 @@ ibm3 <- ugarchspec(variance.model = list(model="sGARCH",garchOrder=c(2,2)),
                    mean.model=list(armaOrder=c(1,1)),
                    distribution.model = "std")
 ibmGarch3 <-ugarchfit(spec=ibm3,data=ibmClose)
-ibmPredict3 <- ugarchboot(ibmGarch1,n.ahead = 30,method=c("Partial","Full")[1])
-plot(ibmPredict3)
+ibmPredict3 <- ugarchboot(ibmGarch1,n.ahead = 14,method=c("Partial","Full")[1])
+plot(ibmPredict3,which=2)
