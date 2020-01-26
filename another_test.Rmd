@@ -1,0 +1,63 @@
+---
+title: "R test of Rmarkdown"
+author: "David J Jackson"
+date: "1/7/2020"
+output: pdf_document
+  ---
+# Analysis of SIDC Daily ISN Data
+## For The Decade of 2009 - 2019
+```{r setup ,include=FALSE}
+library(tidyverse)
+library(data.table)
+library(lubridate)
+library(prophet)
+kanzel <- fread("./kh_spots.csv")
+kanzel$Ymd <- as.Date(kanzel$Ymd)
+kanzel$Year <- year(kanzel$Ymd)
+kanzel$Month <- month(kanzel$Ymd)
+kanzel$Spots <- kanzel$s_n + kanzel$s_s
+kanzel$Groups <- kanzel$g_n + kanzel$g_s
+kanzel$Cts <- ifelse(kanzel$Spots >=1,"Yes","No")
+kanzel<-kanzel[,.(Ymd,Year,Month,R,Spots,Groups,Cts,obs)]
+df<- kanzel %>% filter(Ymd >="2009-01-01" & Ymd <="2019-12-31")
+# Import SIDC Data
+isn <- fread("./sidc_202001.csv")
+colnames(isn) <- c("Year","Month","Day", "Fdate","Spots", "Sd","Obs" ,"Defin" )
+# Add an explicit date feature to the data frame.
+isn$Ymd <- as.Date(paste(isn$Year, isn$Month, 
+                         isn$Day, sep = "-"))
+isn$Cts <- ifelse(isn$Spots >=1,"Yes","No")
+isn_d <- isn[Year >=1944,.(Ymd,Year,Month,Spots,Cts,Obs)]
+```
+
+# Part2
+
+```{r, echo=FALSE}
+ggplot(data=df,aes(x=Ymd,y=R)) +geom_line() +geom_smooth() + 
+ggtitle("Kanzel ISN(Rn) : 2009 - 2019")
+# Sidc ISN: 2009 - 2020 
+isn_d <- isn %>% filter(Year >=2009 & Year <=2019)
+ggplot(data=isn_d,aes(x=Ymd,y=Spots)) +geom_line() +geom_smooth() + 
+ggtitle("Sidc ISN(Rn) : 2009 - 2019")
+```
+```{r,echo=FALSE}
+ggplot(data=df,aes(Obs)) +geom_histogram(binwidth=2) + facet_wrap(~Year,nrow =4,ncol=4) + 
+ggtitle("Kranzel Histogram of Number of Observation by Year: 2009 - 2019") +xlab("Year by Year") + ylab("Total Groups")
+```
+```{r with-without-spots,echo=FALSE}
+# Add an Plot ratio of days w/spots vs day wo/Spots 2009 - 2019
+kanzel_d <- kanzel %>% filter(Year >=2009 & Year <=2019) %>% select(Year,Month,Spots,Cts)
+ggplot(data=kanzel_d,aes(x=Cts , fill=Cts ))+
+  geom_histogram(stat="count") + labs(title="Kranzel: Ratio of Days w/wo Spots: 2009-2019") + facet_wrap(~Year)
+# Sidc days with and without spots
+isn_d %>% filter(Year >=2009 & Year <=2019) %>% select(Year,Month,Spots,Cts)
+ggplot(data=isn_d,aes(x=Cts , fill=Cts ))+
+  geom_histogram(stat="count") + labs(title="Sidc: Ratio of Days w/wo Spots: 2009-2019") + facet_wrap(~Year)
+
+```
+```{r}
+isn %>% filter(Year >=1950) %>%
+ggplot(aes(Ymd,y=Spots)) + geom_line() +geom_smooth() +
+  labs(title="SIDC Total Yearly ISN: 1950 - 2019",subtitle="Based On Daily Mean ISN")
+```
+

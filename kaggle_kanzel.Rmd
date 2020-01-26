@@ -18,20 +18,10 @@ kanzel$Groups <- kanzel$g_n + kanzel$g_s
 kanzel<-kanzel[,.(Ymd,Year,Month,g_n,s_n,g_s,s_s,R,R_n,R_s,Spots,Groups)]
 df <- kanzel %>% filter(Ymd >="2009-01-01" & Ymd <="2019-12-31")
 ```
-
-### Introduction to International Suspot Number(ISN/R)
-
-The first thing we need to understand is that the (raw) data used to predict (in the plot below) the values of "y" are  sunspots or even mean sunspots but are daily mean Wolf(Rn) value. The Wolf(mean daily) values are calculate using the formula, Wolf = Groups *10 +Spots. Two examples:
-1G 10 + 20S = 30 Wolf 2G 10 + 10S = 30 Wolf
-```{r cars, echo=FALSE}
-head(df)
-```
-
-## Total International Sunspot Number(ISN/Rn) by Year: 2009 - 2019
-
+## International Sunspot Number(ISN/Rn)
 ```{r pressure, echo=FALSE}
 ggplot(data=df,aes(x=Ymd,y=R)) +geom_line() +geom_smooth() + 
-ggtitle("Total Wolf(Rn) Value: 2009 - 2019")
+ggtitle("Total ISN(Rn) Value: 2009 - 2019")
 ```
 ```{r summaries, echo=FALSE}
 df.group <- df %>% select(Year,Groups) %>% group_by(Year) %>% summarize(Group = sum(Groups))
@@ -49,9 +39,7 @@ ggtitle("Histogram of Sunspot Groups by Year: 2009 - 2019") +xlab("Year by Year"
 ggplot(data=df,aes(Spots)) +geom_histogram(binwidth=20) + facet_wrap(~Year,nrow =4,ncol=4) + 
 ggtitle("Histogram of Total Sunspots by Year: 2009 - 2019") +xlab("Year by Year") + ylab("Total Spots")
 ```
-
-## Solar Cycle 25 and Beyond: Predicting Sunspots with Prophet
-
+### Subtitle
 ```{r predict1, echo=FALSE}
 df.pred <- kanzel %>% select(Ymd,Spots)
 colnames(df.pred) <- c("ds","y")
@@ -63,7 +51,7 @@ forecast <- predict(m, future)
 plot(m,forecast) +xlab("Year of Prediction") + ylab("Total Sunspots")
 ```
 ```{r cycle25, echo=FALSE}
-fcast <- forecast %>% select(ds,yhat,yhat_lower,yhat_upper) %>% filter(ds>="2019-01-01")
+fcast <- forecast %>% select(ds,yhat,yhat_lower,yhat_upper) %>% filter(ds>="2008-01-01" & ds <="2025-12-31")
 ggplot(data=fcast,aes(x=ds,y=yhat,col="Predicted")) +geom_line() +xlab("Year of Prediction") + ylab("Total Sunspots") +
  geom_smooth(aes(x=ds,y=yhat_lower,col="yhat_lower")) + geom_smooth(aes(x=ds,y=yhat_upper,col="yhat_upper")) +
   ggtitle("Solar Cycle 25 and Beyond")
