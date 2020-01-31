@@ -1,0 +1,44 @@
+---
+title: "Impute-w-mice"
+author: "David J Jackson"
+date: "1/31/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(data.table)
+library(mice)
+```
+```{r Import Kanzel ISN Data}
+rm(list=ls())
+# Total days 27,639
+kanzel <- fread("./../db/kh_spots.csv")
+kanzel$Ymd <- as.Date(kanzel$Ymd)
+kanzel$Year <- year(kanzel$Ymd)
+kanzel$Month <- month(kanzel$Ymd)
+kanzel$S <- kanzel$s_n + kanzel$s_s
+kanzel$G <- kanzel$g_n + kanzel$g_s
+# kanzel$Cts <- ifelse(kanzel$R ==0,0,1)
+# kanzel$Yes <- ifelse(kanzel$R >=1,"Yes","No")
+df_k<-kanzel[,.(Ymd,S,G,R)]
+# df_k <- kanzel %>% filter(Ymd >="2009-01-01" & Ymd <="2019-12-31")
+
+```
+```{r Import SIDC ISN Data}
+sidc <- fread("../db/SN_d_tot_V2.0.csv")
+colnames(sidc) <- c("Year","Month","Day", "Fdate","W", "Sd","Obs" ,"Defin"  )
+sidc$Ymd <- as.Date(paste(sidc$Year, sidc$Month, sidc$Day, sep = "-"))
+sidc$s <- NA
+sidc$g <- NA
+df_s <- sidc %>% filter(Ymd >="1944-05-29") %>% select(Ymd,s,g,W)
+# df_s <- sidc %>% filter(Ymd >="2009-01-01" & Ymd <="2019-12-31")
+```
+```{r joins}
+left <- left_join(df_k,df_s,by="Ymd")
+right <- right_join(df_k,df_s,by="Ymd")
+```
+
+

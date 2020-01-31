@@ -11,15 +11,17 @@ library(data.table)
 library(tidyverse)
 library(prophet)
 library(scales)
+#
+# Total days 27,639
 kanzel <- fread("./../db/kh_spots.csv")
 kanzel$Ymd <- as.Date(kanzel$Ymd)
 kanzel$Year <- year(kanzel$Ymd)
 kanzel$Month <- month(kanzel$Ymd)
-kanzel$Spots <- kanzel$s_n + kanzel$s_s
-kanzel$Groups <- kanzel$g_n + kanzel$g_s
+kanzel$S <- kanzel$s_n + kanzel$s_s
+kanzel$G <- kanzel$g_n + kanzel$g_s
 kanzel$Cts <- ifelse(kanzel$R ==0,0,1)
 kanzel$Yes <- ifelse(kanzel$R >=1,"Yes","No")
-kanzel<-kanzel[,.(Ymd,Year,Month,g_n,s_n,g_s,s_s,R,R_n,R_s,Spots,Groups,Cts,Yes)]
+kanzel<-kanzel[,.(Ymd,Year,Month,g_n,s_n,g_s,s_s,R,R_n,R_s,S,G,Cts,Yes)]
 df <- kanzel %>% filter(Ymd >="2009-01-01" & Ymd <="2019-12-31")
 ```
 
@@ -77,6 +79,19 @@ plot(m,forecast) +xlab("Year of Prediction") + ylab("Total Sunspots")
 fcast <- forecast %>% select(ds,yhat,yhat_lower,yhat_upper) %>% filter(ds>="2020-01-01" & ds <="2025-12-31")
 ggplot(data=fcast,aes(x=ds,y=yhat,col="Predicted")) +geom_line() +xlab("Year of Prediction") + ylab("Total Sunspots") +geom_smooth(method="loess",aes(col="loess")) +
 ggtitle("Solar Cycle 25 and Beyond: 2020 - 2026")
+
+```
+```{r}
+library(mice)
+df_mice <- kanzel %>% select(Ymd,S,G,R)
+```
+```{r Import SIDC Data}
+sidc <- fread("../db/SN_d_tot_V2.0.csv")
+colnames(sidc) <- c("Year","Month","Day", "Fdate","R", "Sd","Obs" ,"Defin"  )
+sidc$Ymd <- as.Date(paste(sidc$Year, sidc$Month, sidc$Day, sep = "-"))
+sidc$S <- NA
+sidc$G <- NA
+sidc <- sidc %>% filter(Ymd >="1944-05-29") %>% select(Ymd,S,G,R)
 
 ```
 
