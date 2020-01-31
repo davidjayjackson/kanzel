@@ -1,9 +1,8 @@
 ---
 title: "A Decade of Sunspots: 2009 -2019"
 subtitle: "(Using Kanzelhöhe Observatory ISN)"
-subtitle: "Using Kanzel Daily  ISN/R"
 author: "David J Jackson"
-date: "1/29/2020"
+date: "1/30/2020"
 output: pdf_document
 ---
 ```{r setup, include=FALSE}
@@ -56,8 +55,9 @@ ggtitle("Histogram of Total Sunspots by Year: 2009 - 2019") +xlab("Year by Year"
 
 # Summary of Days with amd with Out Spots by Year
 ```{r stackeding days, echo=FALSE}
+df %>% group_by(Year,Yes) %>%  summarise(Days= n()) %>% spread(Year,Days)
 df %>% group_by(Year,Yes) %>%  summarise(Days= n()) %>%
-ggplot(aes(x=Year,y=Days,fill=Yes)) + geom_bar(position="stack",stat="identity")
+ggplot(aes(x=Year,y=Days,fill=Yes)) + geom_bar(stat="identity")
 ```
 
 \newpage
@@ -75,12 +75,9 @@ plot(m,forecast) +xlab("Year of Prediction") + ylab("Total Sunspots")
 ```
 ```{r cycle25, echo=FALSE}
 fcast <- forecast %>% select(ds,yhat,yhat_lower,yhat_upper) %>% filter(ds>="2020-01-01" & ds <="2025-12-31")
-ggplot(data=fcast,aes(x=ds,y=yhat,col="Predicted")) +geom_line() +xlab("Year of Prediction") + ylab("Total Sunspots") +
- geom_smooth(aes(x=ds,y=yhat_lower,col="yhat_lower")) + geom_smooth(aes(x=ds,y=yhat_upper,col="yhat_upper")) +
-  ggtitle("Solar Cycle 25 and Beyond")
+ggplot(data=fcast,aes(x=ds,y=yhat,col="Predicted")) +geom_line() +xlab("Year of Prediction") + ylab("Total Sunspots") +geom_smooth(method="loess",aes(col="loess")) +
+ggtitle("Solar Cycle 25 and Beyond: 2020 - 2026")
+
 ```
 
 
-```{r cycle25, echo=FALSE}
-ggplot(data=df) +geom_bar(aes(x=Cts,fill=clarity))
-```
