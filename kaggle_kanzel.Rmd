@@ -1,5 +1,6 @@
 ---
 title: "A Decade of Sunspots: 2009 -2019"
+subtitle: "(Using Kanzelhöhe Observatory ISN)"
 subtitle: "Using Kanzel Daily  ISN/R"
 author: "David J Jackson"
 date: "1/29/2020"
@@ -17,7 +18,9 @@ kanzel$Year <- year(kanzel$Ymd)
 kanzel$Month <- month(kanzel$Ymd)
 kanzel$Spots <- kanzel$s_n + kanzel$s_s
 kanzel$Groups <- kanzel$g_n + kanzel$g_s
-kanzel<-kanzel[,.(Ymd,Year,Month,g_n,s_n,g_s,s_s,R,R_n,R_s,Spots,Groups)]
+kanzel$Cts <- ifelse(kanzel$R ==0,0,1)
+kanzel$Yes <- ifelse(kanzel$R >=1,"Yes","No")
+kanzel<-kanzel[,.(Ymd,Year,Month,g_n,s_n,g_s,s_s,R,R_n,R_s,Spots,Groups,Cts,Yes)]
 df <- kanzel %>% filter(Ymd >="2009-01-01" & Ymd <="2019-12-31")
 ```
 
@@ -51,6 +54,12 @@ ggplot(data=df,aes(Spots)) +geom_histogram(binwidth=20) + facet_wrap(~Year,nrow 
 ggtitle("Histogram of Total Sunspots by Year: 2009 - 2019") +xlab("Year by Year") + ylab("Total Spots")
 ```
 
+# Summary of Days with amd with Out Spots by Year
+```{r stackeding days, echo=FALSE}
+df %>% group_by(Year,Yes) %>%  summarise(Days= n()) %>%
+ggplot(aes(x=Year,y=Days,fill=Yes)) + geom_bar(position="stack",stat="identity")
+```
+
 \newpage
 # Cycle 25 and Beyond: Predicting Monthly ISN
 
@@ -65,8 +74,13 @@ forecast <- predict(m, future)
 plot(m,forecast) +xlab("Year of Prediction") + ylab("Total Sunspots")
 ```
 ```{r cycle25, echo=FALSE}
-fcast <- forecast %>% select(ds,yhat,yhat_lower,yhat_upper) %>% filter(ds>="2008-01-01" & ds <="2025-12-31")
+fcast <- forecast %>% select(ds,yhat,yhat_lower,yhat_upper) %>% filter(ds>="2020-01-01" & ds <="2025-12-31")
 ggplot(data=fcast,aes(x=ds,y=yhat,col="Predicted")) +geom_line() +xlab("Year of Prediction") + ylab("Total Sunspots") +
  geom_smooth(aes(x=ds,y=yhat_lower,col="yhat_lower")) + geom_smooth(aes(x=ds,y=yhat_upper,col="yhat_upper")) +
   ggtitle("Solar Cycle 25 and Beyond")
+```
+
+
+```{r cycle25, echo=FALSE}
+ggplot(data=df) +geom_bar(aes(x=Cts,fill=clarity))
 ```
