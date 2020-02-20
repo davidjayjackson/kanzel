@@ -1,0 +1,82 @@
+---
+title: "A Decade of Sunspots: 2009 -2019"
+subtitle: "(Using Kanzelhöhe Observatory ISN)"
+author: "David J Jackson"
+date: "1/30/2020"
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(tidyverse)
+library(prophet)
+library(scales)
+#
+# Total days 27,639
+kanzel <- fread("./../db/kh_spots.csv")
+kanzel$Ymd <- as.Date(kanzel$Ymd)
+kanzel$Year <- year(kanzel$Ymd)
+kanzel$Month <- month(kanzel$Ymd)
+kanzel$S <- kanzel$s_n + kanzel$s_s
+kanzel$G <- kanzel$g_n + kanzel$g_s
+kanzel$Cts <- ifelse(kanzel$R ==0,0,1)
+kanzel$Yes <- ifelse(kanzel$R >=1,"Yes","No")
+kanzel<-kanzel[,.(Ymd,Year,Month,g_n,s_n,g_s,s_s,R,R_n,R_s,S,G,Cts,Yes)]
+df <- kanzel %>% filter(Ymd >="2009-01-01" & Ymd <="2019-12-31")
+```
+
+# International Sunspot Number(ISN/Rn)
+"The daily (mean) ISN data comes from ,Kanzelhöhe Observatory(http://cesar.kso.ac.at/spots/kh_spotsquery.php) University  of Graz, Aust."
+
+"The Wolf number (also known as the International sunspot number, relative sunspot number, or Zürich number) is a quantity that measures the number of sunspots and groups of sunspots present on the surface of the Sun.", https://en.wikipedia.org/wiki/Wolf_number
+
+```{r pressure, echo=FALSE}
+ggplot(data=df,aes(x=Ymd,y=R)) +geom_line() +geom_smooth() + 
+ggtitle("Total ISN(Rn) Value: 2009 - 2019")
+```
+
+# Kanzel Total by Year: Groups and Spots
+
+```{r summaries, echo=FALSE}
+df.group <- df %>% select(Year,G) %>% group_by(Year) %>% summarize(Group = sum(G))
+df.spots <- df %>% select(Year,S) %>% group_by(Year) %>% summarize(Spots = sum(S))
+```
+```{r plot1,echo=FALSE}
+ggplot(data=df.spots,aes(x=Year,y=Spots)) + geom_col() + ggtitle("Kanzel Total Sunspots by Year")
+ggplot(data=df.group,aes(x=Year,y=Group)) + geom_col() + ggtitle("Kanzel Total Sunspot Groups by Year")
+```
+```{r echo=FALSE}
+ggplot(data=df,aes(Group)) +geom_histogram(binwidth=2) + 
+  facet_wrap(~Year,nrow =4,ncol=4,scale="free_y") + 
+ggtitle("Histogram of Sunspot Groups by Year: 2009 - 2019") +xlab("Year by Year") + ylab("Total Groups")
+```
+```{r echo=FALSE}
+ggplot(data=df,aes(Spots)) +geom_histogram(binwidth=20) + facet_wrap(~Year,nrow =4,ncol=4,scale="free_y") + 
+ggtitle("Histogram of Total Sunspots by Year: 2009 - 2019") +xlab("Year by Year") + ylab("Total Spots")
+```
+
+# Summary of Days with amd with Out Spots by Year
+```{r stackeding days, echo=FALSE}
+df %>% group_by(Year,Yes) %>%  summarise(Days= n()) %>% spread(Year,Days)
+df %>% group_by(Year,Yes) %>%  summarise(Days= n()) %>%
+ggplot(aes(x=Year,y=Days,fill=Yes)) + geom_bar(stat="identity")
+```
+
+\newpage
+# Cycle 25 and Beyond: Predicting Monthly ISN
+
+```{r predict1, echo=FALSE}
+df.pred <- kanzel %>% select(Ymd,Spots)
+colnames(df.pred) <- c("ds","y")
+m <- prophet(seasonality.mode="multiplicative")
+m <- add_seasonality(m, name="cycle_11year", period=365.25 * 11,fourier.order=5)
+m <- fit.prophet(m, df.pred)
+future <- make_future_dataframe(m,periods=8000,freq="day")
+forecast <- predict(m, future)
+plot(m,forecast) +xlab("Year of Prediction") + ylab("Total Sunspots")
+```
+```{r cycle25, echo=FALSE}
+fcast <- forecast %>% select(ds,yhat,yhat_lower,yhat_upper) %>% filter(ds>="2020-01-01" & ds <="2025-12-31")
+ggplot(data=fcast,aes(x=ds,y=yhat,col="Predicted")) +geom_line() +xlab("Year of Prediction") + ylab("Total Sunspots") +geom_smooth(method="loess",aes(col="loess")) +
+ggtitle("Solar Cycle 25 and Beyond: 2020 - 2026")
+```
